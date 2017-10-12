@@ -63,6 +63,21 @@ class CharExportMod
 	{
 		// extract character stats
 		Dbg("Starting to get character stats");
+
+		// Debug hunt for where the stats are stored
+		for (var key in _global.Enums.Stat) {
+			Dbg(Character.GetClientCharacter().GetStat(key));
+		}
+
+		for (var key in _global.Enums.SkillType) {
+			Dbg(key);
+		}
+
+		/*
+		for (var key in ) {
+
+		}
+		*/
 	}
 
 	public function ShowExportWindow(content: String): Void

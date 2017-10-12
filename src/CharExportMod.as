@@ -105,15 +105,18 @@ class CharExportMod
 		m_exportWindowClip.onRelease = Delegate.create(this, function() { this.m_exportWindowClip.stopDrag(); } );
 		
 		// Create a textfield on our coloured box
-		m_boxText = m_exportWindowClip.createTextField("BoxText", m_exportWindowClip.getNextHighestDepth(), 50, 50, 450, 20);
-		m_boxText.embedFonts = true; // we're using an embedded font from src/assets/fonts/
-		m_boxText.selectable = false; // we don't want to be able to select this text
+		var statText: TextField = m_exportWindowClip.createTextField("BoxText", m_exportWindowClip.getNextHighestDepth(), 50, 50, 450, 20);
+		statText.embedFonts = false;
+		statText.selectable = true;
 		
 		// Specify some style information for this text
-		var format: TextFormat = new TextFormat("src.assets.fonts.FuturaMDBk.ttf", 20, 0xFFFFFF, true, false, true); 
-		format.align = "center";
-		m_boxText.setNewTextFormat(format);	// Apply this style to all new text
-		m_boxText.setTextFormat(format); // Apply this style to all existing text
+		//var format: TextFormat = new TextFormat("src.assets.fonts.FuturaMDBk.ttf", 20, 0xFFFFFF, true, false, true); 
+		//format.align = "left";
+		//statText.setNewTextFormat(format);	// Apply this style to all new text
+		//statText.setTextFormat(format); // Apply this style to all existing text
+
+		// Finally, specify some text
+		statText.text = content;
 	}
 
 	public function CloseExportWindow(): Void

@@ -1,7 +1,10 @@
 import mx.utils.Delegate;
 import com.Utils.Archive;
-import com.GameInterface.DistributedValue;
 import com.GameInterface.Log;
+import com.GameInterface.DistributedValue;
+import com.GameInterface.Game.Character;
+import com.GameInterface.SpellBase;
+import com.GameInterface.SpellData;
 
 /**
  * This is a Character export mod to allow easy importing of characters
@@ -73,11 +76,12 @@ class CharExportMod
 			Dbg(key);
 		}
 
-		/*
-		for (var key in ) {
-
+		// spells?
+		for (var i = 0; i < 7; i++) {
+			var spellID = SpellBase.GetPassiveAbility(i);
+			Dbg(spellID);
+			Dbg(SpellBase.GetSpellData(spellID));
 		}
-		*/
 	}
 
 	public function ShowExportWindow(content: String): Void

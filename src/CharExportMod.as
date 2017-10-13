@@ -4,7 +4,6 @@ import com.GameInterface.Log;
 import com.GameInterface.DistributedValue;
 import com.GameInterface.Game.Character;
 import com.GameInterface.SpellBase;
-import com.GameInterface.SpellData;
 
 /**
  * This is a Character export mod to allow easy importing of characters
@@ -28,6 +27,7 @@ class CharExportMod
 	{
 		// creates the DistributedValue to do the action
 		m_doExport = DistributedValue.Create("CharExport_Export");
+		m_doExport.SetValue(false);
 		m_doExport.SignalChanged.Connect(DoExport, this);
 	}
 	
@@ -51,6 +51,7 @@ class CharExportMod
 
 	public function DoExport(): Void
 	{
+		Dbg("DoExport");
 		var stats = GetCharacterStats();
 
 		if (DistributedValue.GetDValue("CharExport_Export") == true) {
@@ -66,22 +67,36 @@ class CharExportMod
 	{
 		// extract character stats
 		Dbg("Starting to get character stats");
+		var player: Character = Character.GetClientCharacter();
+		var stats: String = "";
+		
+		//stats += "Character: " + player.GetName() + "\n";
 
 		// Debug hunt for where the stats are stored
-		for (var key in _global.Enums.Stat) {
-			Dbg(Character.GetClientCharacter().GetStat(key));
+		stats += "Stats:\n";
+		
+		stats += "glance reduction = " + player.GetStat(_global.Enums.SkillType.e_skill_GlanceReduction) + "\n";
+		
+		for (var key: String in _global.Enums.Stat) {
+			//stats += String(Character.GetClientCharacter().GetStat(Number(key))) + "\n";
 		}
 
-		for (var key in _global.Enums.SkillType) {
-			Dbg(key);
+		stats += "skillType:\n";
+		for (var key: String in _global.Enums.SkillType) {
+			stats += key + "\n";
 		}
-
-		// spells?
-		for (var i = 0; i < 7; i++) {
+		
+		
+		stats += "passives:\n";
+		for (var i = 0; i < 5; i++) {
 			var spellID = SpellBase.GetPassiveAbility(i);
-			Dbg(spellID);
-			Dbg(SpellBase.GetSpellData(spellID));
+			if (spellID.valueOf() != 0) {
+				Dbg(String(spellID) + "=" + SpellBase.GetSpellData(spellID).m_Name);
+				stats += SpellBase.GetSpellData(spellID).m_Name + "\n";
+			}
+			
 		}
+		return stats;
 	}
 
 	public function ShowExportWindow(content: String): Void
@@ -89,10 +104,11 @@ class CharExportMod
 		// Creates a window and shows it with the content
 		Dbg("Starting to create a window");
 		m_exportWindowClip = m_swfRoot.createEmptyMovieClip("CharExportClip", m_swfRoot.getNextHighestDepth());
+		
 
 		// Draw a semi-transparent rectangle
-		m_exportWindowClip.lineStyle(3, 0xFF99FF, 75);
-		m_exportWindowClip.beginFill(0xFF00FF, 75);
+		m_exportWindowClip.lineStyle(3, 0xFFFFFF, 75);
+		m_exportWindowClip.beginFill(0x000000, 100);
 		m_exportWindowClip.moveTo(50, 50);
 		m_exportWindowClip.lineTo(500, 50);
 		m_exportWindowClip.lineTo(500, 500);
@@ -105,15 +121,16 @@ class CharExportMod
 		m_exportWindowClip.onRelease = Delegate.create(this, function() { this.m_exportWindowClip.stopDrag(); } );
 		
 		// Create a textfield on our coloured box
-		var statText: TextField = m_exportWindowClip.createTextField("BoxText", m_exportWindowClip.getNextHighestDepth(), 50, 50, 450, 20);
+		var statText: TextField = m_exportWindowClip.createTextField("BoxText", m_exportWindowClip.getNextHighestDepth(), 50, 50, 450, 450);
 		statText.embedFonts = false;
 		statText.selectable = true;
 		
 		// Specify some style information for this text
-		//var format: TextFormat = new TextFormat("src.assets.fonts.FuturaMDBk.ttf", 20, 0xFFFFFF, true, false, true); 
-		//format.align = "left";
-		//statText.setNewTextFormat(format);	// Apply this style to all new text
-		//statText.setTextFormat(format); // Apply this style to all existing text
+		var format: TextFormat = new TextFormat("src.assets.fonts.FuturaMDBk.ttf", 14, 0xFFFFFF); // , false, false, false); 
+		format.align = "left";
+		
+		statText.setNewTextFormat(format);	// Apply this style to all new text
+		statText.setTextFormat(format); // Apply this style to all existing text
 
 		// Finally, specify some text
 		statText.text = content;
@@ -128,6 +145,6 @@ class CharExportMod
 	public static function Dbg(message: String): Void
 	{
 		var date: Date = new Date();
-		Log.Warning(String(date.getTime()) + m_prefSuffix + "debug>", message);
+		Log.Warning(String(date.getTime()) + "CharExport_debug>", message);
 	}
 }

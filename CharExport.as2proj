@@ -39,6 +39,8 @@
   </compileTargets>
   <!-- Assets to embed into the output SWF -->
   <library>
+    <asset path="src\assets\fonts\FuturaMDBk.ttf" />
+    <asset path="src\assets\fonts\FuturaMD_BT.ttf" />
   </library>
   <!-- Paths to exclude from the Project Explorer tree -->
   <hiddenPaths>
@@ -47,10 +49,7 @@
   <!-- Executed before build -->
   <preBuildCommand />
   <!-- Executed after build -->
-  <postBuildCommand alwaysRun="False">xcopy "$(ProjectDir)\deployment\Flash\*.*" "C:\Games\Secret World Legends\Interface\" /e /y
-
-xcopy "$(ProjectDir)\src\mod\*.*" "C:\Games\Secret World Legends\Interface\CharExport\" /e /y
-
+  <postBuildCommand alwaysRun="False">xcopy "$(ProjectDir)\src\mod\*.*" "C:\Games\Secret World Legends\Interface\CharExport\" /e /y
 xcopy "$(OutputFile)" "C:\Games\Secret World Legends\Interface\CharExport" /e /y</postBuildCommand>
   <!-- Other project options -->
   <options>

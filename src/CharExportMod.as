@@ -4,6 +4,9 @@ import com.GameInterface.Log;
 import com.GameInterface.DistributedValue;
 import com.GameInterface.Game.Character;
 import com.GameInterface.SpellBase;
+import com.Utils.ID32;
+import com.GameInterface.Inventory;
+import com.GameInterface.InventoryItem;
 
 /**
  * This is a Character export mod to allow easy importing of characters
@@ -52,7 +55,7 @@ class CharExportMod
 	public function DoExport(): Void
 	{
 		Dbg("DoExport");
-		var stats = GetCharacterStats();
+		var stats = GetCharacterData();
 
 		if (DistributedValue.GetDValue("CharExport_Export") == true) {
 			ShowExportWindow(stats);
@@ -63,40 +66,86 @@ class CharExportMod
 		
 	}
 
-	public function GetCharacterStats(): String
+	public function GetCharacterInfo(): String
 	{
-		// extract character stats
-		Dbg("Starting to get character stats");
+		// Export string that we'll be using to format our output
+		var data: String = "[character]\nname=%name%\nlevel=%level%\n" +
+		"[stats]\nhp=%hp%\nhit=%hit%\ncrit=%crit%\npower=%power%\nglance=%glance%\ndefence=%defence%\nprotection=%protection%\n" +
+		"[gear]\nhead=%head%\nfinger=%finger%\nwrist=%wrist%\nneck=%neck%\nluck=%luck%\nwaist=%waist%\nocult=%ocult%\n" +
+		"primary=%primary%\nsecundary=%secundary%\n" + "[skills]\npassives=%passives%";
+
 		var player: Character = Character.GetClientCharacter();
-		var stats: String = "";
 		
-		//stats += "Character: " + player.GetName() + "\n";
+		// character
+		data.replace("%name%", player.GetName()); // name
+		// level
+
+		// stats
+			// hp
+			// hit
+			// crit
+			// power
+			// glance
+			// defence
+			// protection
 
 		// Debug hunt for where the stats are stored
-		stats += "Stats:\n";
-		
-		stats += "glance reduction = " + player.GetStat(_global.Enums.SkillType.e_skill_GlanceReduction) + "\n";
-		
+		data.replace("%glance%", player.GetStat(_global.Enums.SkillType.e_skill_GlanceReduction));
+
+		/*		
 		for (var key: String in _global.Enums.Stat) {
 			//stats += String(Character.GetClientCharacter().GetStat(Number(key))) + "\n";
 		}
-
-		stats += "skillType:\n";
 		for (var key: String in _global.Enums.SkillType) {
-			stats += key + "\n";
+			//stats += key + "\n";
 		}
-		
-		
-		stats += "passives:\n";
+		*/
+
+		// gear (name, quality:level, glyph:value, signet:value)
+
+		// need to scrape tooltips for information
+		// https://github.com/Xeio/FastCaches/blob/master/src/com/xeio/FastCaches/FastCaches.as <- shows how to access tooltip data
+		// Xeio: M_decriptions is an array, I imagine you'd need to loop if for a complicated item
+
+		/* this won't work		
+		var inventory: Inventory = new Inventory(new ID32(_global.Enums.InvType.e_Type_GC_WeaponContainer,
+			Character.GetClientCharID().GetInstance()));
+		var item: InventoryItem = undefined;
+		var itemString: String = "";
+
+		item = inventory.GetItemAt(_global.Enums.ItemEquipLocation.e_Chakra_1);
+		itemString = item.m_Name + ", ";
+		itemString = item.m_Rarity + ":" item.m_Rank + ", ";
+		itemString = item.m_GlyphRarity + ":" m_GlyphRank + ", ";
+		itemString = item.m_SignetRarity + ":" m_SignetRank;
+
+		data.replace("%head%", itemString); // head 
+		*/
+
+
+			// finger
+			// wrist
+			// luck
+			// waist
+			// ocult
+			// primary
+			// secondary
+
+		// passives
+		var passives: String = "";
 		for (var i = 0; i < 5; i++) {
 			var spellID = SpellBase.GetPassiveAbility(i);
+
 			if (spellID.valueOf() != 0) {
 				Dbg(String(spellID) + "=" + SpellBase.GetSpellData(spellID).m_Name);
-				stats += SpellBase.GetSpellData(spellID).m_Name + "\n";
+				passives += SpellBase.GetSpellData(spellID).m_Name + ", ";
 			}
-			
 		}
-		return stats;
+		// removes the last ", "
+		passives = passives.substr(0, passives.length - 2);
+		data.replace("%passives%", passives);
+
+		return data;
 	}
 
 	public function ShowExportWindow(content: String): Void
@@ -131,6 +180,9 @@ class CharExportMod
 		
 		statText.setNewTextFormat(format);	// Apply this style to all new text
 		statText.setTextFormat(format); // Apply this style to all existing text
+
+		// Create Close and Copy Buttons
+		// TODO
 
 		// Finally, specify some text
 		statText.text = content;

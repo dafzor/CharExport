@@ -1,5 +1,3 @@
-import com.Components.ItemSlot;
-import gfx.controls.TextArea;
 import mx.utils.Delegate;
 import com.Utils.Archive;
 import com.GameInterface.Log;
@@ -25,6 +23,7 @@ class CharExportMod
 	private var m_closeButtonClip: MovieClip;
 	
 	private var m_exportTextField: TextField;
+	private var m_closeTextField: TextField;
 	
 	private var m_doExport: DistributedValue;
 	private var m_playerCharacter: Character;
@@ -42,14 +41,19 @@ class CharExportMod
 		m_doExport.SetValue(false);
 		m_doExport.SignalChanged.Connect(DoExport, this);
 		
+		CharacterBase.SignalCharacterEnteredReticuleMode.Connect(CloseExportWindow, this);
+		
 		m_playerCharacter = Character.GetClientCharacter();
 	}
 	
 	public function OnUnload()
 	{
 		// clears the distributed value
-		m_doExport.SignalChanged.Disconnect(DoExport, this);
+		m_doExport.SignalChanged.Disconnect(DoExport);
 		m_doExport = undefined;
+		
+		// closes window if entering reticle mode
+		CharacterBase.SignalCharacterEnteredReticuleMode.Disconnect(CloseExportWindow);
 	}
 	
 	public function Activate(config: Archive)
@@ -142,39 +146,66 @@ class CharExportMod
 	public function ShowExportWindow(content: String): Void
 	{
 		var width: Number = 500;
-		var height: Number = 600;
+		var height: Number = 550;
 		var x: Number = 50;
 		var y: Number = 50;
+		
+		var inner_x: Number = x;
+		var inner_y: Number = y + 30; //titlebar hieght
 		
 		// Creates a window and shows it with the content
 		Dbg("Starting to create a window");
 		m_exportWindowClip = m_swfRoot.createEmptyMovieClip("CharExportClip", m_swfRoot.getNextHighestDepth());
 		
-
 		// Draw a semi-transparent rectangle
 		m_exportWindowClip.lineStyle(3, 0x000000, 75);
-		m_exportWindowClip.beginFill(0x000000, 100);
+		
+		// Draw titlebar
+		m_exportWindowClip.beginFill(0x333333, 100);
 		m_exportWindowClip.moveTo(x, y);
 		m_exportWindowClip.lineTo(x+width, y);
-		m_exportWindowClip.lineTo(x+width, y+height);
-		m_exportWindowClip.lineTo(x, y+height);
+		m_exportWindowClip.lineTo(x+width, y+30);
+		m_exportWindowClip.lineTo(x, y+30);
 		m_exportWindowClip.lineTo(x, y);
 		m_exportWindowClip.endFill();
-		m_exportWindowClip._alpha = 75;
+		
+		// Draws full window
+		m_exportWindowClip.beginFill(0x000000, 75);
+		m_exportWindowClip.moveTo(inner_x, inner_y);
+		m_exportWindowClip.lineTo(inner_x+width, inner_y);
+		m_exportWindowClip.lineTo(inner_x+width, inner_y+height);
+		m_exportWindowClip.lineTo(inner_x, inner_y+height);
+		m_exportWindowClip.lineTo(inner_x, inner_y);
+		m_exportWindowClip.endFill();
 		
 		
 		// Hookup some callbacks to provide dragging functionality - flash does most of the hard work for us
-		m_exportWindowClip.onPress = Delegate.create(this, function() { this.m_exportWindowClip.startDrag(); Selection.setFocus(this.m_exportTextField); } );
+		m_exportWindowClip.onPress = Delegate.create(this, function() {	this.m_exportWindowClip.startDrag(); Selection.setFocus(this.m_exportTextField); });
 		m_exportWindowClip.onRelease = Delegate.create(this, function() { this.m_exportWindowClip.stopDrag(); } );
 		
-		/*
-		// Create Close and Copy Buttons
-		m_closeButtonClip = new Button();
-		m_exportWindowClip.attachMovie(m_closeButtonClip, "closeButton", m_exportWindowClip.getNextHighestDepth());
-		*/
+		// doesn't work
+		//m_exportWindowClip.onKeyDown = Delegate.create(this, function(e) { e.preventDefault(); e.stopPropagation(); } );
+		//m_exportWindowClip.onKeyUp = Delegate.create(this, function(e) { e.preventDefault(); e.stopPropagation(); } );
+		
+		m_closeButtonClip = m_exportWindowClip.createEmptyMovieClip("CloseExportButtonClip", m_exportWindowClip.getNextHighestDepth());
+		m_closeButtonClip._x = x + width - 25;
+		m_closeButtonClip._y = y + 5;
+		m_closeButtonClip.lineStyle(3, 0x000000, 75);
+		
+		m_closeButtonClip.beginFill(0xFF0000, 100);
+		m_closeButtonClip.moveTo(0, 0);
+		m_closeButtonClip.lineTo(20, 0);
+		m_closeButtonClip.lineTo(20, 20);
+		m_closeButtonClip.lineTo(0, 20);
+		m_closeButtonClip.lineTo(0, 0);
+		m_closeButtonClip.endFill();
+		
+		// doesn't work
+		//m_closeButtonClip.onPress = Delegate.create(this, function(e) { e.preventDefault(); e.stopPropagation(); DistributedValue.SetDValue("CharExport_Export", false); } ); 
+		
 		
 		// Create a textfield on our window
-		m_exportTextField = m_exportWindowClip.createTextField("exportText", m_exportWindowClip.getNextHighestDepth(), x+10, y+10, width-20, height-(10+75));
+		m_exportTextField = m_exportWindowClip.createTextField("exportText", m_exportWindowClip.getNextHighestDepth(), inner_x+10, inner_y+10, width-20, height-(10+75));
 		m_exportTextField.type = "input";
 		m_exportTextField.embedFonts = true;
 		m_exportTextField.selectable = true;
@@ -183,7 +214,10 @@ class CharExportMod
 		m_exportTextField.background = true;
 		m_exportTextField.backgroundColor = 0x696969;
 		
-		m_exportTextField.onSetFocus = function ():Void { Selection.setSelection(0, content.length); }
+		m_exportTextField.onSetFocus = Delegate.create(this, function () { Selection.setSelection(0, content.length); });
+		
+		// doesn't work
+		//m_exportTextField.onChanged  = Delegate.create(this, function(e) { e.preventDefault(); });
 		
 		// Specify some style information for this text
 		var format: TextFormat = new TextFormat("src.assets.fonts.FuturaMDBk.ttf", 14, 0xFFFFFF); // , false, false, false); 
@@ -192,11 +226,12 @@ class CharExportMod
 		m_exportTextField.setNewTextFormat(format);	// Apply this style to all new text
 		m_exportTextField.setTextFormat(format); // Apply this style to all existing text
 		
-		var useMessage: TextField = m_exportWindowClip.createTextField("usageText", m_exportWindowClip.getNextHighestDepth(), x+10, y+height-75, width-20, 40);
+		// Some instruction text
+		var useMessage: TextField = m_exportWindowClip.createTextField("usageText", m_exportWindowClip.getNextHighestDepth(), inner_x+10, inner_y+height-75, width-20, 40);
 		useMessage.wordWrap = true;
 		useMessage.setNewTextFormat(format);
 		
-		useMessage.text = "Use Ctrl+C to copy the content. If you change gear, please close and open the window again to update the export.";
+		useMessage.text = "Click this window and use Ctrl+C to copy the content. If you change gear, please close and open the window again to update the export.";
 		
 		// Finally, specify some text and set focus on it
 		m_exportTextField.text = content;
@@ -205,8 +240,13 @@ class CharExportMod
 
 	public function CloseExportWindow(): Void
 	{
+		m_closeButtonClip.clear();
+		m_closeButtonClip.removeMovieClip();
 		m_exportWindowClip.clear();
 		m_exportWindowClip.removeMovieClip();
+		
+		// makes sure when the window is closed the dvalue is also false
+		m_doExport.SetValue(false);
 	}
 	
 	public function GetStatValues(skill: Number): String

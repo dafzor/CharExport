@@ -1,3 +1,5 @@
+import com.Components.ItemSlot;
+import gfx.controls.TextArea;
 import mx.utils.Delegate;
 import com.Utils.Archive;
 import com.GameInterface.Log;
@@ -20,8 +22,9 @@ class CharExportMod
 {
 	private var m_swfRoot: MovieClip; // Our root MovieClip
 	private var m_exportWindowClip: MovieClip;
-	private var m_exportButtonClip: MovieClip;
 	private var m_closeButtonClip: MovieClip;
+	
+	private var m_exportTextField: TextField;
 	
 	private var m_doExport: DistributedValue;
 	private var m_playerCharacter: Character;
@@ -64,14 +67,13 @@ class CharExportMod
 	{
 		Dbg("DoExport");
 		var stats = GetCharacterInfo();
-
+		
 		if (DistributedValue.GetDValue("CharExport_Export") == true) {
 			ShowExportWindow(stats);
 		}
 		else {
 			CloseExportWindow();
 		}
-		
 	}
 
 	public function GetCharacterInfo(): String
@@ -99,35 +101,24 @@ class CharExportMod
 		data = data.split("%protection%").join(GetStatValues(_global.Enums.SkillType.e_Skill_PhysicalMitigation)); // protection
 		
 		// gear (name, quality:level, glyph:value, signet:value)
-		//data += "[gear]\nhead=%head%\nfinger=%finger%\nwrist=%wrist%\nneck=%neck%\nluck=%luck%\nwaist=%waist%\nocult=%ocult%\n" +
-		//"primary=%primary%\nsecundary=%secundary%\n";
+		data += "[gear]\nhead=%head%\nfinger=%finger%\nwrist=%wrist%\nneck=%neck%\nluck=%luck%\nwaist=%waist%\nocult=%ocult%\n" +
+		"gadget=%gadget%\nprimary=%primary%\nsecondary=%secondary%\n";
 		
-		// need to scrape tooltips for information
-		// https://github.com/Xeio/FastCaches/blob/master/src/com/xeio/FastCaches/FastCaches.as <- shows how to access tooltip data
-		// Xeio: M_decriptions is an array, I imagine you'd need to loop if for a complicated item
+		data = data.split("%head%").join(GetCharacterItemName(_global.Enums.ItemEquipLocation.e_Chakra_7)); //head
 		
-		/* this won't work		
-		var inventory: Inventory = new Inventory(new ID32(_global.Enums.InvType.e_Type_GC_WeaponContainer,
-			Character.GetClientCharID().GetInstance()));
-		var item: InventoryItem = undefined;
-		var itemString: String = "";
+		data = data.split("%finger%").join(GetCharacterItemName(_global.Enums.ItemEquipLocation.e_Chakra_4)); //finger
+		data = data.split("%neck%").join(GetCharacterItemName(_global.Enums.ItemEquipLocation.e_Chakra_5)); //neck
+		data = data.split("%wrist%").join(GetCharacterItemName(_global.Enums.ItemEquipLocation.e_Chakra_6)); //wrist
 		
-		item = inventory.GetItemAt(_global.Enums.ItemEquipLocation.e_Chakra_1);
-		itemString = item.m_Name + ", ";
-		itemString = item.m_Rarity + ":" item.m_Rank + ", ";
-		itemString = item.m_GlyphRarity + ":" m_GlyphRank + ", ";
-		itemString = item.m_SignetRarity + ":" m_SignetRank;
-
-		data.replace("%head%", itemString); // head 
-		*/
-			// finger
-			// wrist
-			// luck
-			// waist
-			// ocult
-			// primary
-			// secondary
-			
+		data = data.split("%luck%").join(GetCharacterItemName(_global.Enums.ItemEquipLocation.e_Chakra_1)); //luck
+		data = data.split("%ocult%").join(GetCharacterItemName(_global.Enums.ItemEquipLocation.e_Chakra_3)); //occult
+		data = data.split("%waist%").join(GetCharacterItemName(_global.Enums.ItemEquipLocation.e_Chakra_2)); //waist
+		
+		data = data.split("%gadget%").join(GetCharacterItemName(_global.Enums.ItemEquipLocation.e_Aegis_Talisman_1)); //gadget
+		data = data.split("%primary%").join(GetCharacterItemName(_global.Enums.ItemEquipLocation.e_Wear_First_WeaponSlot)); //primary
+		data = data.split("%secondary%").join(GetCharacterItemName(_global.Enums.ItemEquipLocation.e_Wear_Second_WeaponSlot)); //secondary
+		
+		
 		// skills
 		data += "[skills]\npassives=%passives%";
 			
@@ -150,52 +141,66 @@ class CharExportMod
 
 	public function ShowExportWindow(content: String): Void
 	{
+		var width: Number = 500;
+		var height: Number = 600;
+		var x: Number = 50;
+		var y: Number = 50;
+		
 		// Creates a window and shows it with the content
 		Dbg("Starting to create a window");
 		m_exportWindowClip = m_swfRoot.createEmptyMovieClip("CharExportClip", m_swfRoot.getNextHighestDepth());
 		
 
 		// Draw a semi-transparent rectangle
-		m_exportWindowClip.lineStyle(3, 0xFFFFFF, 75);
+		m_exportWindowClip.lineStyle(3, 0x000000, 75);
 		m_exportWindowClip.beginFill(0x000000, 100);
-		m_exportWindowClip.moveTo(50, 50);
-		m_exportWindowClip.lineTo(500, 50);
-		m_exportWindowClip.lineTo(500, 500);
-		m_exportWindowClip.lineTo(50, 500);
-		m_exportWindowClip.lineTo(50, 50);
+		m_exportWindowClip.moveTo(x, y);
+		m_exportWindowClip.lineTo(x+width, y);
+		m_exportWindowClip.lineTo(x+width, y+height);
+		m_exportWindowClip.lineTo(x, y+height);
+		m_exportWindowClip.lineTo(x, y);
 		m_exportWindowClip.endFill();
+		m_exportWindowClip._alpha = 75;
+		
 		
 		// Hookup some callbacks to provide dragging functionality - flash does most of the hard work for us
-		m_exportWindowClip.onPress = Delegate.create(this, function() { this.m_exportWindowClip.startDrag(); } );
+		m_exportWindowClip.onPress = Delegate.create(this, function() { this.m_exportWindowClip.startDrag(); Selection.setFocus(this.m_exportTextField); } );
 		m_exportWindowClip.onRelease = Delegate.create(this, function() { this.m_exportWindowClip.stopDrag(); } );
 		
-		// Create a textfield on our coloured box
-		var statText: TextField = m_exportWindowClip.createTextField("BoxText", m_exportWindowClip.getNextHighestDepth(), 50, 50, 450, 450);
-		statText.embedFonts = false;
-		statText.selectable = true;
-		statText.wordWrap = true;
+		/*
+		// Create Close and Copy Buttons
+		m_closeButtonClip = new Button();
+		m_exportWindowClip.attachMovie(m_closeButtonClip, "closeButton", m_exportWindowClip.getNextHighestDepth());
+		*/
+		
+		// Create a textfield on our window
+		m_exportTextField = m_exportWindowClip.createTextField("exportText", m_exportWindowClip.getNextHighestDepth(), x+10, y+10, width-20, height-(10+75));
+		m_exportTextField.type = "input";
+		m_exportTextField.embedFonts = true;
+		m_exportTextField.selectable = true;
+		m_exportTextField.wordWrap = true;
+		m_exportTextField.border = true;
+		m_exportTextField.background = true;
+		m_exportTextField.backgroundColor = 0x696969;
+		
+		m_exportTextField.onSetFocus = function ():Void { Selection.setSelection(0, content.length); }
 		
 		// Specify some style information for this text
 		var format: TextFormat = new TextFormat("src.assets.fonts.FuturaMDBk.ttf", 14, 0xFFFFFF); // , false, false, false); 
 		format.align = "left";
 		
-		statText.setNewTextFormat(format);	// Apply this style to all new text
-		statText.setTextFormat(format); // Apply this style to all existing text
+		m_exportTextField.setNewTextFormat(format);	// Apply this style to all new text
+		m_exportTextField.setTextFormat(format); // Apply this style to all existing text
 		
-		// Finally, specify some text
-		statText.text = content;
+		var useMessage: TextField = m_exportWindowClip.createTextField("usageText", m_exportWindowClip.getNextHighestDepth(), x+10, y+height-75, width-20, 40);
+		useMessage.wordWrap = true;
+		useMessage.setNewTextFormat(format);
 		
-		/*
-		statText.selectionBeginIndex = 0;
-		statText.selectionEndIndex = statText.text.length;
+		useMessage.text = "Use Ctrl+C to copy the content. If you change gear, please close and open the window again to update the export.";
 		
-		System.setClipboard(content);
-		// Create Close and Copy Buttons
-		m_closeButtonClip = new Button();
-		m_exportButtonClip = new Button();
-		m_exportWindowClip.attachMovie(m_closeButtonClip, "closeButton", m_exportWindowClip.getNextHighestDepth());
-		m_exportButtonClip.attachMovie(m_exportButtonClip, "exportButton", m_exportWindowClip.getNextHighestDepth());
-		*/
+		// Finally, specify some text and set focus on it
+		m_exportTextField.text = content;
+		Selection.setFocus(m_exportTextField);
 	}
 
 	public function CloseExportWindow(): Void
@@ -217,6 +222,14 @@ class CharExportMod
 		values += Skills.GetSkill(skill, 0);
 		
 		return values;
+	}
+	
+	public function GetCharacterItemName(slot: Number): String
+	{
+		var inventory: Inventory = new Inventory(new ID32(_global.Enums.InvType.e_Type_GC_WeaponContainer, Character.GetClientCharID().GetInstance()));
+		var item: InventoryItem = inventory.GetItemAt(slot);
+		
+		return item.m_Name;
 	}
 
 	public static function Dbg(message: String): Void

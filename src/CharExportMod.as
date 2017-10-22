@@ -145,6 +145,9 @@ class CharExportMod
 
 	public function ShowExportWindow(content: String): Void
 	{
+		// Opens the character sheet so we get of reticle mode and have a way to close our window
+		DistributedValue.SetDValue("character_sheet", true);
+		
 		var width: Number = 500;
 		var height: Number = 550;
 		var x: Number = 50;
@@ -154,7 +157,6 @@ class CharExportMod
 		var inner_y: Number = y + 30; //titlebar hieght
 		
 		// Creates a window and shows it with the content
-		Dbg("Starting to create a window");
 		m_exportWindowClip = m_swfRoot.createEmptyMovieClip("CharExportClip", m_swfRoot.getNextHighestDepth());
 		
 		// Draw a semi-transparent rectangle
@@ -182,11 +184,12 @@ class CharExportMod
 		// Hookup some callbacks to provide dragging functionality - flash does most of the hard work for us
 		m_exportWindowClip.onPress = Delegate.create(this, function() {	this.m_exportWindowClip.startDrag(); Selection.setFocus(this.m_exportTextField); });
 		m_exportWindowClip.onRelease = Delegate.create(this, function() { this.m_exportWindowClip.stopDrag(); } );
+		//m_exportWindowClip.onKeyDown = Delegate.create(this, function(e) { if (!Key.isDown(Key.CONTROL)) { e.preventDefault(); e.stopPropagation(); }} );
 		
 		// doesn't work
 		//m_exportWindowClip.onKeyDown = Delegate.create(this, function(e) { e.preventDefault(); e.stopPropagation(); } );
 		//m_exportWindowClip.onKeyUp = Delegate.create(this, function(e) { e.preventDefault(); e.stopPropagation(); } );
-		
+		/*
 		m_closeButtonClip = m_exportWindowClip.createEmptyMovieClip("CloseExportButtonClip", m_exportWindowClip.getNextHighestDepth());
 		m_closeButtonClip._x = x + width - 25;
 		m_closeButtonClip._y = y + 5;
@@ -199,16 +202,17 @@ class CharExportMod
 		m_closeButtonClip.lineTo(0, 20);
 		m_closeButtonClip.lineTo(0, 0);
 		m_closeButtonClip.endFill();
+		*/
 		
 		// doesn't work
-		//m_closeButtonClip.onPress = Delegate.create(this, function(e) { e.preventDefault(); e.stopPropagation(); DistributedValue.SetDValue("CharExport_Export", false); } ); 
+		//m_closeButtonClip.onRelease = Delegate.create(this, function() { this.CloseExportWindow(); } ); 
 		
 		
 		// Create a textfield on our window
 		m_exportTextField = m_exportWindowClip.createTextField("exportText", m_exportWindowClip.getNextHighestDepth(), inner_x+10, inner_y+10, width-20, height-(10+75));
 		m_exportTextField.type = "input";
 		m_exportTextField.embedFonts = true;
-		m_exportTextField.selectable = true;
+		m_exportTextField.selectable = false;
 		m_exportTextField.wordWrap = true;
 		m_exportTextField.border = true;
 		m_exportTextField.background = true;
@@ -231,7 +235,13 @@ class CharExportMod
 		useMessage.wordWrap = true;
 		useMessage.setNewTextFormat(format);
 		
-		useMessage.text = "Click this window and use Ctrl+C to copy the content. If you change gear, please close and open the window again to update the export.";
+		useMessage.text = "Click this window and use Ctrl+C to copy the content. To close this window close Character Sheet window.";
+		
+		// titlebar text
+		var titleText: TextField = m_exportWindowClip.createTextField("titleText", m_exportWindowClip.getNextHighestDepth(), x + 5, y + 5, width, 30);
+		format.bold = true;
+		titleText.setNewTextFormat(format);
+		titleText.text = "Character Export";
 		
 		// Finally, specify some text and set focus on it
 		m_exportTextField.text = content;
